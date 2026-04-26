@@ -134,6 +134,8 @@ int noise_randstate_free(NoiseRandState *state) {
     if (!state)
         return NOISE_ERROR_INVALID_PARAM;
 
+    EVP_CIPHER_CTX_free(state->chacha_ctx);
+
     /* Clean and free the memory */
     noise_free(state, state->size);
     return NOISE_ERROR_NONE;
