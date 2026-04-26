@@ -33,7 +33,6 @@ typedef struct {
 
 static void noise_sha_reset(NoiseHashState *state) {
     NoiseHashState_ex *st = (NoiseHashState_ex *) state;
-    EVP_MD_CTX_reset(st->ctx);
     EVP_DigestInit(st->ctx, st->md);
 }
 

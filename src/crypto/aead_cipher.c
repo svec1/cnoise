@@ -27,6 +27,7 @@ typedef struct {
 
 static void noise_aead_cipher_init_key(NoiseCipherState *state, const uint8_t *key) {
     NoiseCipherState_ex *st = (NoiseCipherState_ex *) state;
+    EVP_AEAD_CTX_cleanup(st->ctx);
     EVP_AEAD_CTX_init(st->ctx, st->aead, key, st->parent.key_len, st->parent.mac_len,
                       NULL);
 }
