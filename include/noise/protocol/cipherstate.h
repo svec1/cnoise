@@ -31,26 +31,30 @@ extern "C" {
 
 typedef struct NoiseCipherState_s NoiseCipherState;
 
-int      noise_cipherstate_new_by_id(NoiseCipherState **state, int id);
-int      noise_cipherstate_new_by_name(NoiseCipherState **state, const char *name);
-int      noise_cipherstate_free(NoiseCipherState *state);
-int      noise_cipherstate_get_cipher_id(const NoiseCipherState *state);
-size_t   noise_cipherstate_get_key_length(const NoiseCipherState *state);
-size_t   noise_cipherstate_get_mac_length(const NoiseCipherState *state);
-int      noise_cipherstate_init_key(NoiseCipherState *state, const uint8_t *key,
-                                    size_t key_len);
-int      noise_cipherstate_has_key(const NoiseCipherState *state);
-int      noise_cipherstate_encrypt_with_ad(NoiseCipherState *state, const uint8_t *ad,
-                                           size_t ad_len, NoiseBuffer *buffer);
-int      noise_cipherstate_decrypt_with_ad(NoiseCipherState *state, const uint8_t *ad,
-                                           size_t ad_len, NoiseBuffer *buffer);
-int      noise_cipherstate_encrypt(NoiseCipherState *state, NoiseBuffer *buffer);
-int      noise_cipherstate_decrypt(NoiseCipherState *state, NoiseBuffer *buffer);
-int      noise_cipherstate_set_nonce(NoiseCipherState *state, uint64_t nonce);
-uint64_t noise_cipherstate_get_nonce(NoiseCipherState *state);
-int      noise_cipherstate_get_max_key_length(void);
-int      noise_cipherstate_get_max_mac_length(void);
-int      noise_cipherstate_rekey(NoiseCipherState *state);
+int    noise_cipherstate_new_by_id(NoiseCipherState **state, int id);
+int    noise_cipherstate_new_by_name(NoiseCipherState **state, const char *name);
+int    noise_cipherstate_free(NoiseCipherState *state);
+int    noise_cipherstate_get_cipher_id(const NoiseCipherState *state);
+size_t noise_cipherstate_get_key_length(const NoiseCipherState *state);
+size_t noise_cipherstate_get_mac_length(const NoiseCipherState *state);
+size_t noise_cipherstate_get_nonce_length(NoiseCipherState *state);
+int    noise_cipherstate_init_key(NoiseCipherState *state, const uint8_t *key,
+                                  size_t key_len);
+int    noise_cipherstate_has_key(const NoiseCipherState *state);
+int    noise_cipherstate_encrypt_with_ad(NoiseCipherState *state, const uint8_t *ad,
+                                         size_t ad_len, NoiseBuffer *buffer);
+int    noise_cipherstate_decrypt_with_ad(NoiseCipherState *state, const uint8_t *ad,
+                                         size_t ad_len, NoiseBuffer *buffer);
+int    noise_cipherstate_encrypt(NoiseCipherState *state, NoiseBuffer *buffer);
+int    noise_cipherstate_decrypt(NoiseCipherState *state, NoiseBuffer *buffer);
+int    noise_cipherstate_set_nonce(NoiseCipherState *state, const uint8_t *nonce,
+                                   uint64_t nonce_len);
+int    noise_cipherstate_get_nonce(NoiseCipherState *state, uint8_t *nonce,
+                                   size_t nonce_len);
+int    noise_cipherstate_get_max_key_length(void);
+int    noise_cipherstate_get_max_mac_length(void);
+int    noise_cipherstate_get_max_nonce_length(void);
+int    noise_cipherstate_rekey(NoiseCipherState *state);
 
 #ifdef __cplusplus
 };

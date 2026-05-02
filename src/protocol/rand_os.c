@@ -29,12 +29,12 @@
 #include <stdlib.h>
 #include <string.h>
 #if defined(__WIN__) || defined(__CYGWIN32__)
-#include <windows.h>
 #include <wincrypt.h>
+#include <windows.h>
 #else
-#include <unistd.h>
-#include <fcntl.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <unistd.h>
 #endif
 
 /**
@@ -49,10 +49,10 @@
  */
 
 #if defined(__LINUX__) || defined(__BSD__) || defined(__APPLE__)
-#define RANDOM_DEVICE   "/dev/urandom"
+#define RANDOM_DEVICE "/dev/urandom"
 #endif
 #if defined(__WIN__) || defined(__CYGWIN32__)
-#define RANDOM_WIN32    1
+#define RANDOM_WIN32 1
 #endif
 
 /**
@@ -67,7 +67,8 @@
  */
 void noise_rand_bytes(void *bytes, size_t size) {
     if (size == 0 || bytes == NULL) {
-        fprintf(stderr, "Invalid size or buffer provided for noise_rand_bytes.  Abort!\n");
+        fprintf(stderr,
+                "Invalid size or buffer provided for noise_rand_bytes.  Abort!\n");
         exit(1);
     }
 
@@ -76,7 +77,7 @@ void noise_rand_bytes(void *bytes, size_t size) {
     if (fd >= 0) {
         for (;;) {
             int len = read(fd, bytes, size);
-            if (len == (int)size) {
+            if (len == (int) size) {
                 /* We have the bytes we wanted */
                 close(fd);
                 return;
@@ -113,8 +114,7 @@ void noise_rand_bytes(void *bytes, size_t size) {
 
 /* We are building against ed25519-donna, which needs a random function */
 
-void ed25519_randombytes_unsafe(void *p, size_t len)
-{
+void ed25519_randombytes_unsafe(void *p, size_t len) {
     noise_rand_bytes(p, len);
 }
 

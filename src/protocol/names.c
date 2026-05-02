@@ -55,6 +55,7 @@ typedef struct {
 static NoiseIdMapping const algorithm_names[] = {
     /* Cipher algorithsm */
     {NOISE_CIPHER_CHACHAPOLY, "ChaChaPoly", 10},
+    {NOISE_CIPHER_XCHACHAPOLY, "XChaChaPoly", 11},
     {NOISE_CIPHER_AESGCM, "AESGCM", 6},
 
     /* Hash algorithms */

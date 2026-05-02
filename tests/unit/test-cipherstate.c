@@ -29,8 +29,9 @@
 
 /* Check raw cipher output against test vectors */
 static void check_cipher(int id, size_t key_len, size_t mac_len, const char *name,
-                         const char *key, uint64_t nonce, const char *ad,
-                         const char *plaintext, const char *ciphertext, const char *mac) {
+                         const char *key, uint64_t nonce, size_t nonce_len,
+                         const char *ad, const char *plaintext, const char *ciphertext,
+                         const char *mac) {
     NoiseCipherState *state;
     NoiseBuffer       mbuf;
     uint8_t           k[MAX_KEY_LEN];
@@ -41,6 +42,8 @@ static void check_cipher(int id, size_t key_len, size_t mac_len, const char *nam
     uint8_t           buffer[MAX_CIPHER_DATA];
     size_t            pt_len;
     size_t            ad_len;
+    uint64_t          max_uint64_without_1 = 0xFFFFFFFFFFFFFFFEULL;
+    uint64_t          nonce_tmp;
 
     /* Convert the test strings into binary data */
     compare(string_to_data(k, sizeof(k), key), key_len);
@@ -54,9 +57,11 @@ static void check_cipher(int id, size_t key_len, size_t mac_len, const char *nam
     compare(noise_cipherstate_get_cipher_id(state), id);
     compare(noise_cipherstate_get_key_length(state), key_len);
     compare(noise_cipherstate_get_mac_length(state), mac_len);
+    compare(noise_cipherstate_get_nonce_length(state), nonce_len);
     verify(!noise_cipherstate_has_key(state));
     verify(key_len <= noise_cipherstate_get_max_key_length());
     verify(mac_len <= noise_cipherstate_get_max_mac_length());
+    verify(nonce_len <= noise_cipherstate_get_max_nonce_length());
 
     /* Try to encrypt.  Because the key is not set yet, this will
        return the plaintext as-is */
@@ -98,12 +103,14 @@ static void check_cipher(int id, size_t key_len, size_t mac_len, const char *nam
     compare(mbuf.size, mac_len / 2);
 
     /* Cannot set the nonce before we set the key */
-    compare(noise_cipherstate_set_nonce(state, nonce), NOISE_ERROR_INVALID_STATE);
+    compare(noise_cipherstate_set_nonce(state, (uint8_t *) &nonce, sizeof(nonce)),
+            NOISE_ERROR_INVALID_STATE);
 
     /* Set the key and fast-forward the nonce */
     verify(!noise_cipherstate_has_key(state));
     compare(noise_cipherstate_init_key(state, k, key_len), NOISE_ERROR_NONE);
-    compare(noise_cipherstate_set_nonce(state, nonce), NOISE_ERROR_NONE);
+    compare(noise_cipherstate_set_nonce(state, (uint8_t *) &nonce, sizeof(nonce)),
+            NOISE_ERROR_NONE);
     verify(noise_cipherstate_has_key(state));
 
     /* Encrypt the data */
@@ -123,11 +130,18 @@ static void check_cipher(int id, size_t key_len, size_t mac_len, const char *nam
             NOISE_ERROR_MAC_FAILURE);
 
     /* Try to reset the nonce.  Cannot go backwards */
-    compare(noise_cipherstate_set_nonce(state, nonce), NOISE_ERROR_INVALID_NONCE);
+    compare(noise_cipherstate_set_nonce(state, (uint8_t *) &nonce, sizeof(nonce)),
+            NOISE_ERROR_INVALID_NONCE);
 
     /* Fast-forward the nonce to just before the rollover.  We will be able
        to encrypt one more block, and then the next request will be rejected */
-    compare(noise_cipherstate_set_nonce(state, 0xFFFFFFFFFFFFFFFEULL), NOISE_ERROR_NONE);
+    compare(noise_cipherstate_set_nonce(state, (uint8_t *) &max_uint64_without_1,
+                                        sizeof(max_uint64_without_1)),
+            NOISE_ERROR_NONE);
+    compare(noise_cipherstate_get_nonce(state, (uint8_t *) &nonce_tmp, sizeof(nonce_tmp)),
+            NOISE_ERROR_NONE);
+    verify(nonce_tmp == max_uint64_without_1);
+
     /* Rekey, which should not affect the nonce and should still allow us to
        encrypt one more block. */
     compare(noise_cipherstate_rekey(state), NOISE_ERROR_NONE);
@@ -137,9 +151,10 @@ static void check_cipher(int id, size_t key_len, size_t mac_len, const char *nam
     compare(noise_cipherstate_encrypt_with_ad(state, a, ad_len, &mbuf),
             NOISE_ERROR_INVALID_NONCE);
 
-    /* Reset the key and then we can reset the nonce */
+    /* Reset the key, then we can reset the nonce and check it*/
     compare(noise_cipherstate_init_key(state, k, key_len), NOISE_ERROR_NONE);
-    compare(noise_cipherstate_set_nonce(state, nonce), NOISE_ERROR_NONE);
+    compare(noise_cipherstate_set_nonce(state, (uint8_t *) &nonce, sizeof(nonce)),
+            NOISE_ERROR_NONE);
 
     /* Decrypt the test ciphertext and MAC */
     memcpy(buffer, ct, pt_len);
@@ -153,7 +168,9 @@ static void check_cipher(int id, size_t key_len, size_t mac_len, const char *nam
 
     /* Fast-forward the nonce to just before the rollover.  We will be able
        to decrypt one more block, and then the next request will be rejected */
-    compare(noise_cipherstate_set_nonce(state, 0xFFFFFFFFFFFFFFFEULL), NOISE_ERROR_NONE);
+    compare(noise_cipherstate_set_nonce(state, (uint8_t *) &max_uint64_without_1,
+                                        sizeof(max_uint64_without_1)),
+            NOISE_ERROR_NONE);
     noise_buffer_set_input(mbuf, buffer, pt_len + mac_len);
     compare(noise_cipherstate_decrypt_with_ad(state, a, ad_len, &mbuf),
             NOISE_ERROR_MAC_FAILURE); /* MAC will fail, but that's OK */
@@ -172,7 +189,8 @@ static void check_cipher(int id, size_t key_len, size_t mac_len, const char *nam
             NOISE_ERROR_INVALID_LENGTH);
     compare(noise_cipherstate_init_key(state, k, key_len + 1),
             NOISE_ERROR_INVALID_LENGTH);
-    compare(noise_cipherstate_set_nonce(0, nonce), NOISE_ERROR_INVALID_PARAM);
+    compare(noise_cipherstate_set_nonce(0, (uint8_t *) &nonce, sizeof(nonce)),
+            NOISE_ERROR_INVALID_PARAM);
     noise_buffer_set_inout(mbuf, buffer, pt_len, sizeof(buffer));
     compare(noise_cipherstate_encrypt_with_ad(0, a, ad_len, &mbuf),
             NOISE_ERROR_INVALID_PARAM);
@@ -221,7 +239,7 @@ static void cipherstate_check_test_vectors(void) {
         NOISE_CIPHER_CHACHAPOLY, 32, 16, "ChaChaPoly",
         "0x1c9240a5eb55d38af333888604f6b5f0473917c1402b80099dca5cbc207075c0",
         /* IV is reversed compared to RFC 7539 value to correct endianness */
-        0x0807060504030201, "0xf33388860000000000004e91",
+        0x0807060504030201, 12, "0xf33388860000000000004e91",
         "0x496e7465726e65742d4472616674732061726520647261667420646f63756d65"
         "6e74732076616c696420666f722061206d6178696d756d206f6620736978206d"
         "6f6e74687320616e64206d617920626520757064617465642c207265706c6163"
@@ -240,6 +258,15 @@ static void cipherstate_check_test_vectors(void) {
         "711bee2fc6c5f45783e825bc12872b670aa8c45057444af0d6c7",
         "0xff253f776a69ea58b8a4579cb19d78da");
 
+    check_cipher(
+        NOISE_CIPHER_XCHACHAPOLY, 32, 16, "XChaChaPoly",
+        "0x0000000000000000000000000000000000000000000000000000000000000000", 0, 24, "",
+        "0x00000000000000000000000000000000000000000000000000000000000000000000000"
+        "000000000000000000000000000000000000000000000000000000000",
+        "0x789e9689e5208d7fd9e1f3c5b5341f48ef18a13e418998addadd97a3693a987f8e82e"
+        "cd5c1433bfed1af49750c0f1ff29c4174a05b119aa3a9e8333812e0c0fe",
+        "0xb1299c5949d895ee01dbf50f8395dd84");
+
     /* Test vectors for AES in GCM mode from Appendix B of:
        http://csrc.nist.gov/groups/ST/toolkit/BCM/documents/proposedmodes/gcm/gcm-revised-spec.pdf
        We can only use a few of the vectors because most of the IV's in the
@@ -248,12 +275,12 @@ static void cipherstate_check_test_vectors(void) {
     /* AESGCM - gcm-revised-spec.pdf, test case #13 */
     check_cipher(NOISE_CIPHER_AESGCM, 32, 16, "AESGCM",
                  "0x0000000000000000000000000000000000000000000000000000000000000000", 0,
-                 "", "", "", "0x530f8afbc74536b9a963b4f1c4cb738b");
+                 12, "", "", "", "0x530f8afbc74536b9a963b4f1c4cb738b");
 
     /* AESGCM - gcm-revised-spec.pdf, test case #14 */
     check_cipher(NOISE_CIPHER_AESGCM, 32, 16, "AESGCM",
                  "0x0000000000000000000000000000000000000000000000000000000000000000", 0,
-                 "", "0x00000000000000000000000000000000",
+                 12, "", "0x00000000000000000000000000000000",
                  "0xcea7403d4d606b6e074ec5d3baf39d18",
                  "0xd0d1c8a799996bf0265b98b5d48ab919");
 }

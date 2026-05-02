@@ -83,6 +83,7 @@ int noise_cipherstate_new_by_id(NoiseCipherState **state, int id) {
     *state = 0;
     switch (id) {
         case NOISE_CIPHER_CHACHAPOLY:
+        case NOISE_CIPHER_XCHACHAPOLY:
         case NOISE_CIPHER_AESGCM:
             *state = noise_aead_cipher_new(id);
             break;
@@ -196,6 +197,15 @@ size_t noise_cipherstate_get_mac_length(const NoiseCipherState *state) {
 }
 
 /**
+ * \brief Gets the length nonce for a CipherState object.
+ *
+ * \sa noise_cipherstate_get_max_mac_length()
+ */
+size_t noise_cipherstate_get_nonce_length(NoiseCipherState *state) {
+    return state ? state->n_len : 0;
+}
+
+/**
  * \brief Initializes the key on a CipherState object.
  *
  * \param state The CipherState object.
@@ -220,7 +230,7 @@ int noise_cipherstate_init_key(NoiseCipherState *state, const uint8_t *key,
     /* Set the key */
     (*(state->init_key))(state, key);
     state->has_key = 1;
-    state->n       = 0;
+    memset(state->n, 0, sizeof(state->n));
     return NOISE_ERROR_NONE;
 }
 
@@ -302,17 +312,20 @@ int noise_cipherstate_encrypt_with_ad(NoiseCipherState *state, const uint8_t *ad
     if ((buffer->max_size - buffer->size) < state->mac_len)
         return NOISE_ERROR_INVALID_LENGTH;
 
-    /* If the nonce has overflowed, then further encryption is impossible.
+    /* If the nonce(counter block) has overflowed, then further encryption is impossible.
        The value 2^64 - 1 is reserved (Noise specification revision 30),
        so if the nonce has reached that value then overflow has occurred. */
-    if (state->n == 0xFFFFFFFFFFFFFFFFULL)
+    uint64_t *nonce_p = ((uint64_t *) state->n);
+    if (*nonce_p == 0xFFFFFFFFFFFFFFFFULL)
         return NOISE_ERROR_INVALID_NONCE;
 
     /* Encrypt the plaintext and authenticate it */
     err = (*(state->encrypt))(state, ad, ad_len, buffer->data, buffer->size);
-    ++(state->n);
     if (err != NOISE_ERROR_NONE)
         return err;
+
+    /* Increments the counter block */
+    ++(*nonce_p);
 
     /* Adjust the output length for the MAC and return */
     buffer->size += state->mac_len;
@@ -376,10 +389,11 @@ int noise_cipherstate_decrypt_with_ad(NoiseCipherState *state, const uint8_t *ad
     if (buffer->size < state->mac_len)
         return NOISE_ERROR_INVALID_LENGTH;
 
-    /* If the nonce has overflowed, then further decryption is impossible.
+    /* If the nonce(counter block) has overflowed, then further decryption is impossible.
        The value 2^64 - 1 is reserved (Noise specification revision 30),
        so if the nonce has reached that value then overflow has occurred. */
-    if (state->n == 0xFFFFFFFFFFFFFFFFULL)
+    uint64_t *nonce_p = ((uint64_t *) state->n);
+    if (*nonce_p == 0xFFFFFFFFFFFFFFFFULL)
         return NOISE_ERROR_INVALID_NONCE;
 
     /* Decrypt the ciphertext and check the MAC */
@@ -388,7 +402,7 @@ int noise_cipherstate_decrypt_with_ad(NoiseCipherState *state, const uint8_t *ad
     if (err != NOISE_ERROR_NONE)
         return err;
 
-    ++(state->n);
+    ++(*nonce_p);
 
     /* Adjust the output length for the MAC and return */
     buffer->size -= state->mac_len;
@@ -499,21 +513,25 @@ int noise_cipherstate_decrypt(NoiseCipherState *state, NoiseBuffer *buffer) {
  *
  * \sa noise_cipherstate_init_key()
  */
-int noise_cipherstate_set_nonce(NoiseCipherState *state, uint64_t nonce) {
+int noise_cipherstate_set_nonce(NoiseCipherState *state, const uint8_t *nonce,
+                                size_t nonce_len) {
     /* Bail out if the state is NULL */
-    if (!state)
+    if (!state || !nonce)
         return NOISE_ERROR_INVALID_PARAM;
 
     /* If the key hasn't been set yet, we cannot do this */
     if (!state->has_key)
         return NOISE_ERROR_INVALID_STATE;
 
+    if (nonce_len > state->n_len)
+        return NOISE_ERROR_INVALID_LENGTH;
+
     /* Reject the value if the nonce would go backwards */
-    if (state->n > nonce)
+    if (*(uint64_t *) state->n > *(uint64_t *) nonce)
         return NOISE_ERROR_INVALID_NONCE;
 
     /* Set the nonce and return */
-    state->n = nonce;
+    memcpy(state->n, nonce, nonce_len);
     return NOISE_ERROR_NONE;
 }
 
@@ -522,16 +540,22 @@ int noise_cipherstate_set_nonce(NoiseCipherState *state, uint64_t nonce) {
  *
  * \sa noise_cipherstate_get_max_key_length()
  */
-uint64_t noise_cipherstate_get_nonce(NoiseCipherState *state) {
+int noise_cipherstate_get_nonce(NoiseCipherState *state, uint8_t *nonce,
+                                size_t nonce_len) {
     /* Bail out if the state is NULL */
-    if (!state)
+    if (!state || !nonce)
         return NOISE_ERROR_INVALID_PARAM;
 
     /* If the key hasn't been set yet, we cannot do this */
     if (!state->has_key)
         return NOISE_ERROR_INVALID_STATE;
 
-    return state->n;
+    if (nonce_len > state->n_len)
+        return NOISE_ERROR_INVALID_LENGTH;
+
+    /* Copy the nonce and return */
+    memcpy(nonce, state->n, nonce_len);
+    return NOISE_ERROR_NONE;
 }
 
 /**
@@ -553,26 +577,35 @@ int noise_cipherstate_get_max_mac_length(void) {
 }
 
 /**
+ * \brief Gets the maximum nonce length for the supported algorithms.
+ *
+ * \sa noise_cipherstate_get_max_key_length()
+ */
+int noise_cipherstate_get_max_nonce_length(void) {
+    return NOISE_MAX_NONCE_LEN;
+}
+
+/**
  * \brief Rekeys the cipherstate as described in Noise protocol spec section 4.2.
  */
 int noise_cipherstate_rekey(NoiseCipherState *state) {
-    int      err;
-    uint64_t n;
-    uint8_t  new_key[NOISE_MAX_KEY_LEN + NOISE_MAX_MAC_LEN];
+    int     err;
+    uint8_t n[NOISE_MAX_NONCE_LEN];
+    uint8_t new_key[NOISE_MAX_KEY_LEN + NOISE_MAX_MAC_LEN];
     if (!state)
         return NOISE_ERROR_INVALID_STATE;
     if (!state->has_key)
         return NOISE_ERROR_INVALID_STATE;
 
     memset(new_key, 0, sizeof(new_key));
+    memcpy(n, state->n, state->n_len);
 
     /* we call encrypt with max nonce, then reset to the current value */
-    n        = state->n;
-    state->n = 0xFFFFFFFFFFFFFFFFULL;
+    memset(state->n, 0xFF, state->n_len);
 
     /* Encrypt the plaintext and authenticate it */
-    err      = (*(state->encrypt))(state, NULL, 0, new_key, state->key_len);
-    state->n = n;
+    err = (*(state->encrypt))(state, NULL, 0, new_key, state->key_len);
+    memcpy(state->n, n, state->n_len);
 
     if (err != NOISE_ERROR_NONE)
         return err;

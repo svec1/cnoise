@@ -63,6 +63,11 @@ extern "C" {
 #define NOISE_PSK_LEN 32
 
 /**
+ * \brief Maximum length nonce length over all supported hash algorithms.
+ */
+#define NOISE_MAX_NONCE_LEN 24
+
+/**
  * \brief Internal structure of the NoiseCipherState type.
  */
 struct NoiseCipherState_s {
@@ -82,7 +87,10 @@ struct NoiseCipherState_s {
     uint8_t mac_len;
 
     /** \brief The nonce value for the next packet */
-    uint64_t n;
+    uint8_t n[NOISE_MAX_NONCE_LEN];
+
+    /** \brief Length of the nonce for this cipher in bytes */
+    uint8_t n_len;
 
     /**
      * \brief Creates a new CipherState of the same type as this one.

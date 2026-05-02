@@ -291,6 +291,7 @@ int main(int argc, char *argv[]) {
 
     /* Measure the performance of the AEAD primitives */
     perf_cipher(NOISE_CIPHER_CHACHAPOLY);
+    perf_cipher(NOISE_CIPHER_XCHACHAPOLY);
     perf_cipher(NOISE_CIPHER_AESGCM);
 
     /* Measure the performance of the DH primitives */
