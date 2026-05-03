@@ -48,7 +48,7 @@ int    noise_cipherstate_decrypt_with_ad(NoiseCipherState *state, const uint8_t 
 int    noise_cipherstate_encrypt(NoiseCipherState *state, NoiseBuffer *buffer);
 int    noise_cipherstate_decrypt(NoiseCipherState *state, NoiseBuffer *buffer);
 int    noise_cipherstate_set_nonce(NoiseCipherState *state, const uint8_t *nonce,
-                                   uint64_t nonce_len);
+                                   size_t nonce_len);
 int    noise_cipherstate_get_nonce(NoiseCipherState *state, uint8_t *nonce,
                                    size_t nonce_len);
 int    noise_cipherstate_get_max_key_length(void);
