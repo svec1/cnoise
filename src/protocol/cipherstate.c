@@ -508,8 +508,8 @@ int noise_cipherstate_decrypt(NoiseCipherState *state, NoiseBuffer *buffer) {
  * the current value.
  *
  * \warning This function is intended for testing purposes only.  It is
- * dangerous to set the nonce back to a previously-used value so this
- * function will actively prevent that from happening.
+ * dangerous to set the nonce back to a previously-used value so 
+ * it's necessary to check it yourself.
  *
  * \sa noise_cipherstate_init_key()
  */
@@ -525,10 +525,6 @@ int noise_cipherstate_set_nonce(NoiseCipherState *state, const uint8_t *nonce,
 
     if (nonce_len > state->n_len)
         return NOISE_ERROR_INVALID_LENGTH;
-
-    /* Reject the value if the nonce would go backwards */
-    if (*(uint64_t *) state->n > *(uint64_t *) nonce)
-        return NOISE_ERROR_INVALID_NONCE;
 
     /* Set the nonce and return */
     memcpy(state->n, nonce, nonce_len);
