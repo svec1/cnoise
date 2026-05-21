@@ -1,6 +1,1 @@
-*.o
-*.a
-.depend
-config.*
-INSTALL
 build/
