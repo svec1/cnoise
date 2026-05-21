@@ -98,7 +98,7 @@ struct NoiseCipherState_s {
      * \return A new CipherState object, or NULL if there is insufficient
      * memory for the request.
      */
-    NoiseCipherState *(*create)(uint16_t);
+    NoiseCipherState* (*create)(uint16_t);
 
     /**
      * \brief Sets the key for this CipherState.
@@ -109,7 +109,7 @@ struct NoiseCipherState_s {
      * If the key has already been set before, then calling this function
      * again will set a new key.
      */
-    void (*init_key)(NoiseCipherState *state, const uint8_t *key);
+    void (*init_key)(NoiseCipherState* state, const uint8_t* key);
 
     /**
      * \brief Encrypts data with this CipherState.
@@ -127,8 +127,8 @@ struct NoiseCipherState_s {
      * The \a data buffer must have enough room to append \ref mac_len extra
      * bytes for the MAC value.
      */
-    int (*encrypt)(NoiseCipherState *state, const uint8_t *ad, size_t ad_len,
-                   uint8_t *data, size_t len);
+    int (*encrypt)(NoiseCipherState* state, const uint8_t* ad, size_t ad_len,
+		   uint8_t* data, size_t len);
 
     /**
      * \brief Decrypts data with this CipherState.
@@ -144,8 +144,8 @@ struct NoiseCipherState_s {
      * \return NOISE_ERROR_NONE on success, NOISE_ERROR_MAC_FAILURE
      * if the MAC check failed.
      */
-    int (*decrypt)(NoiseCipherState *state, const uint8_t *ad, size_t ad_len,
-                   uint8_t *data, size_t len);
+    int (*decrypt)(NoiseCipherState* state, const uint8_t* ad, size_t ad_len,
+		   uint8_t* data, size_t len);
 
     /**
      * \brief Destroys this CipherState prior to the memory being freed.
@@ -159,7 +159,7 @@ struct NoiseCipherState_s {
      * This pointer can be NULL if the back end does not need any special
      * clean up logic.
      */
-    void (*destroy)(NoiseCipherState *state);
+    void (*destroy)(NoiseCipherState* state);
 };
 
 /**
@@ -183,7 +183,7 @@ struct NoiseHashState_s {
      *
      * \param state Points to the HashState.
      */
-    void (*reset)(NoiseHashState *state);
+    void (*reset)(NoiseHashState* state);
 
     /**
      * \brief Updates the HashState with more input data.
@@ -192,7 +192,7 @@ struct NoiseHashState_s {
      * \param data Points to the input data.
      * \param len The length of the input \a data in bytes.
      */
-    void (*update)(NoiseHashState *state, const uint8_t *data, size_t len);
+    void (*update)(NoiseHashState* state, const uint8_t* data, size_t len);
 
     /**
      * \brief Finalizes the HashState and returns the hash value.
@@ -201,7 +201,7 @@ struct NoiseHashState_s {
      * \param hash Points to the buffer to receive the final hash value.
      * This must be at least \ref hash_len bytes in length.
      */
-    void (*finalize)(NoiseHashState *state, uint8_t *hash);
+    void (*finalize)(NoiseHashState* state, uint8_t* hash);
 
     /**
      * \brief Destroys this HashState prior to the memory being freed.
@@ -215,13 +215,13 @@ struct NoiseHashState_s {
      * This pointer can be NULL if the back end does not need any special
      * clean up logic.
      */
-    void (*destroy)(NoiseHashState *state);
+    void (*destroy)(NoiseHashState* state);
 };
 
 /* States for public key algorithms, either DHState or SignState */
-#define NOISE_KEY_TYPE_NO_KEY 0  /**< No key set yet */
+#define NOISE_KEY_TYPE_NO_KEY 0	 /**< No key set yet */
 #define NOISE_KEY_TYPE_KEYPAIR 1 /**< Set to a keypair */
-#define NOISE_KEY_TYPE_PUBLIC 2  /**< Set to a public key only */
+#define NOISE_KEY_TYPE_PUBLIC 2	 /**< Set to a public key only */
 
 /**
  * \brief Internal structure of the NoiseDHState type.
@@ -246,19 +246,22 @@ struct NoiseDHState_s {
     uint8_t nulls_allowed : 1;
 
     /** \brief Length of the private key for this algorithm in bytes */
-    uint16_t private_key_len;
+    size_t private_key_len;
 
     /** \brief Length of the public key for this algorithm in bytes */
-    uint16_t public_key_len;
+    size_t public_key_len;
 
-    /** \brief Length of the shared key for this algorithm in bytes */
-    uint16_t shared_key_len;
+    /** \brief Length of the cipher text for this algorithm in bytes */
+    size_t cipher_text_len;
+
+    /** \brief Length of the shared secret key for this algorithm in bytes */
+    size_t shared_secret_key_len;
 
     /** \brief Points to the private key in the subclass state */
-    uint8_t *private_key;
+    uint8_t* private_key;
 
     /** \brief Points to the public key in the subclass state */
-    uint8_t *public_key;
+    uint8_t* public_key;
 
     /**
      * \brief Generates a new key pair for this Diffie-Hellman algorithm.
@@ -269,7 +272,7 @@ struct NoiseDHState_s {
      *
      * \return NOISE_ERROR_NONE on success or an error code otherwise.
      */
-    int (*generate_keypair)(NoiseDHState *state, const NoiseDHState *other);
+    int (*generate_keypair)(NoiseDHState* state, const NoiseDHState* other);
 
     /**
      * \brief Sets a keypair.
@@ -284,8 +287,8 @@ struct NoiseDHState_s {
      * \return NOISE_ERROR_INVALID_PUBLIC_KEY if there is something wrong
      * with the public key.
      */
-    int (*set_keypair)(NoiseDHState *state, const uint8_t *private_key,
-                       const uint8_t *public_key);
+    int (*set_keypair)(NoiseDHState* state, const uint8_t* private_key,
+		       const uint8_t* public_key);
 
     /**
      * \brief Sets a keypair using only the private key.
@@ -297,7 +300,7 @@ struct NoiseDHState_s {
      * \return NOISE_ERROR_INVALID_PRIVATE_KEY if there is something wrong
      * with the private key.
      */
-    int (*set_keypair_private)(NoiseDHState *state, const uint8_t *private_key);
+    int (*set_keypair_private)(NoiseDHState* state, const uint8_t* private_key);
 
     /**
      * \brief Validates a public key.
@@ -309,7 +312,8 @@ struct NoiseDHState_s {
      * \return NOISE_ERROR_INVALID_PUBLIC_KEY if there is something wrong
      * with the public key.
      */
-    int (*validate_public_key)(const NoiseDHState *state, const uint8_t *public_key);
+    int (*validate_public_key)(const NoiseDHState* state,
+			       const uint8_t* public_key);
 
     /**
      * \brief Copies another key into this object.
@@ -319,7 +323,8 @@ struct NoiseDHState_s {
      * \param other Points to another DHState for obtaining dependent
      * parameters.  May be NULL.
      */
-    int (*copy)(NoiseDHState *state, const NoiseDHState *from, const NoiseDHState *other);
+    int (*copy)(NoiseDHState* state, const NoiseDHState* from,
+		const NoiseDHState* other);
 
     /**
      * \brief Performs a Diffie-Hellman calculation.
@@ -337,8 +342,8 @@ struct NoiseDHState_s {
      * This function must always operate in the same amount of time, even
      * if the private or public key is invalid.
      */
-    int (*calculate)(const NoiseDHState *private_key_state,
-                     const NoiseDHState *public_key_state, uint8_t *shared_key);
+    int (*calculate)(const NoiseDHState* private_key_state,
+		     const NoiseDHState* public_key_state, uint8_t* shared_key);
 
     /**
      * \brief Changes the role for this object.
@@ -348,7 +353,7 @@ struct NoiseDHState_s {
      * This pointer can be NULL if the back end does not need any special
      * logic to change the role.
      */
-    void (*change_role)(NoiseDHState *state);
+    void (*change_role)(NoiseDHState* state);
 
     /**
      * \brief Destroys this DHState prior to the memory being freed.
@@ -362,7 +367,7 @@ struct NoiseDHState_s {
      * This pointer can be NULL if the back end does not need any special
      * clean up logic.
      */
-    void (*destroy)(NoiseDHState *state);
+    void (*destroy)(NoiseDHState* state);
 };
 
 /**
@@ -383,10 +388,10 @@ struct NoiseSymmetricState_s {
      *
      * \sa noise_symmetricstate_split()
      */
-    NoiseCipherState *cipher;
+    NoiseCipherState* cipher;
 
     /** \brief Points to the HashState object for this SymmetricState */
-    NoiseHashState *hash;
+    NoiseHashState* hash;
 
     /** \brief Current value of the chaining key for the handshake */
     uint8_t ck[NOISE_MAX_HASHLEN];
@@ -412,34 +417,37 @@ struct NoiseHandshakeState_s {
     int action;
 
     /** \brief Points to the next message pattern tokens to be processed */
-    const uint8_t *tokens;
+    const uint8_t* tokens;
 
     /** \brief Points to the SymmetricState object for this HandshakeState */
-    NoiseSymmetricState *symmetric;
+    NoiseSymmetricState* symmetric;
 
     /** \brief Points to the DHState object for local static key */
-    NoiseDHState *dh_local_static;
+    NoiseDHState* dh_local_static;
 
     /** \brief Points to the DHState object for local ephemeral key */
-    NoiseDHState *dh_local_ephemeral;
+    NoiseDHState* dh_local_ephemeral;
 
-    /** \brief Points to the DHState object for local hybrid forward secrecy key */
-    NoiseDHState *dh_local_hybrid;
+    /** \brief Points to the DHState object for local hybrid forward secrecy key
+     */
+    NoiseDHState* dh_local_hybrid;
 
     /** \brief Points to the DHState object for remote static key */
-    NoiseDHState *dh_remote_static;
+    NoiseDHState* dh_remote_static;
 
     /** \brief Points to the DHState object for remote ephemeral key */
-    NoiseDHState *dh_remote_ephemeral;
+    NoiseDHState* dh_remote_ephemeral;
 
-    /** \brief Points to the DHState object for remote hybrid forward secrecy key */
-    NoiseDHState *dh_remote_hybrid;
+    /** \brief Points to the DHState object for remote hybrid forward secrecy
+     * key */
+    NoiseDHState* dh_remote_hybrid;
 
     /** \brief Points to the object for the fixed ephemeral test key */
-    NoiseDHState *dh_fixed_ephemeral;
+    NoiseDHState* dh_fixed_ephemeral;
 
-    /** \brief Points to the object for the fixed hybrid forward secrecy test key */
-    NoiseDHState *dh_fixed_hybrid;
+    /** \brief Points to the object for the fixed hybrid forward secrecy test
+     * key */
+    NoiseDHState* dh_fixed_hybrid;
 
     /** \brief Pre-shared key value */
     uint8_t pre_shared_key[NOISE_PSK_LEN];
@@ -448,22 +456,22 @@ struct NoiseHandshakeState_s {
     size_t pre_shared_key_len;
 
     /** \brief Points to the prologue value */
-    uint8_t *prologue;
+    uint8_t* prologue;
 
     /** \brief Length of the prologue value in bytes */
     size_t prologue_len;
 };
 
 /* Handshake message pattern tokens (must be single-byte values) */
-#define NOISE_TOKEN_END 0        /**< End of pattern, start data session */
-#define NOISE_TOKEN_S 1          /**< "s" token */
-#define NOISE_TOKEN_E 2          /**< "e" token */
-#define NOISE_TOKEN_EE 3         /**< "ee" token */
-#define NOISE_TOKEN_ES 4         /**< "es" token */
-#define NOISE_TOKEN_SE 5         /**< "se" token */
-#define NOISE_TOKEN_SS 6         /**< "ss" token */
-#define NOISE_TOKEN_E1 7         /**< "e1" token (HFS spec) */
-#define NOISE_TOKEN_EKEM1 8      /**< "ekem1" token (HFS spec) */
+#define NOISE_TOKEN_END 0	 /**< End of pattern, start data session */
+#define NOISE_TOKEN_S 1		 /**< "s" token */
+#define NOISE_TOKEN_E 2		 /**< "e" token */
+#define NOISE_TOKEN_EE 3	 /**< "ee" token */
+#define NOISE_TOKEN_ES 4	 /**< "es" token */
+#define NOISE_TOKEN_SE 5	 /**< "se" token */
+#define NOISE_TOKEN_SS 6	 /**< "ss" token */
+#define NOISE_TOKEN_E1 7	 /**< "e1" token (HFS spec) */
+#define NOISE_TOKEN_EKEM1 8	 /**< "ekem1" token (HFS spec) */
 #define NOISE_TOKEN_FLIP_DIR 255 /**< Flip the handshake direction */
 
 /** Pattern requires a local static keypair */
@@ -517,23 +525,22 @@ struct NoiseHandshakeState_s {
 /** Fallback is possible from this pattern (two-way, ends in "K") */
 #define NOISE_REQ_FALLBACK_POSSIBLE (1 << 6)
 
-void noise_rand_bytes(void *bytes, size_t size);
+void noise_rand_bytes(void* bytes, size_t size);
 
 /** @cond */
 
-NoiseCipherState *noise_aead_cipher_new(uint16_t);
+NoiseCipherState* noise_aead_cipher_new(uint16_t);
 
-NoiseHashState *noise_blake_new(uint16_t);
-NoiseHashState *noise_sha_new(uint16_t);
+NoiseHashState* noise_sha_new(uint16_t);
 
-NoiseDHState *noise_curve25519_new(void);
-NoiseDHState *noise_kyber_new(void);
+NoiseDHState* noise_curve25519_new(void);
+NoiseDHState* noise_mlkem_new(uint16_t);
 
 typedef uint16_t NoisePatternFlags_t;
 
 /** @endcond */
 
-const uint8_t      *noise_pattern_lookup(int id);
+const uint8_t* noise_pattern_lookup(int id);
 NoisePatternFlags_t noise_pattern_reverse_flags(NoisePatternFlags_t flags);
 
 #ifdef __cplusplus

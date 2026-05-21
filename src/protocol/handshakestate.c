@@ -1093,7 +1093,7 @@ int noise_handshakestate_get_action(const NoiseHandshakeState *state) {
 static int noise_handshake_mix_dh(NoiseHandshakeState *state,
                                   const NoiseDHState  *private_key,
                                   const NoiseDHState  *public_key) {
-    size_t   len    = private_key->shared_key_len;
+    size_t   len    = private_key->shared_secret_key_len;
     uint8_t *shared = alloca(len);
     int      err    = noise_dhstate_calculate(private_key, public_key, shared, len);
     noise_symmetricstate_mix_key(state->symmetric, shared, len);

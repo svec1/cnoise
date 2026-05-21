@@ -29,7 +29,7 @@ extern "C" {
 
 /* Build an identifier.  Deliberately designed to fit into a 16-bit
    integer on 8-bit and 16-bit embedded systems */
-#define NOISE_ID(ch, num) ((((int) (ch)) << 8) | ((int) (num)))
+#define NOISE_ID(ch, num) ((((int)(ch)) << 8) | ((int)(num)))
 
 /* AEAD cipher algorithms */
 #define NOISE_CIPHER_NONE 0
@@ -50,7 +50,8 @@ extern "C" {
 #define NOISE_DH_NONE 0
 #define NOISE_DH_CATEGORY NOISE_ID('D', 0)
 #define NOISE_DH_CURVE25519 NOISE_ID('D', 1)
-#define NOISE_DH_KYBER1024 NOISE_ID('D', 4)
+#define NOISE_DH_MLKEM768 NOISE_ID('D', 2)
+#define NOISE_DH_MLKEM1024 NOISE_ID('D', 3)
 
 /* Handshake patterns */
 #define NOISE_PATTERN_NONE 0
