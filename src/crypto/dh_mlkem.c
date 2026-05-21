@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Southern Storm Software, Pty Ltd.
+ * Copyright (C) 2026 svec, Pty Ltd.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
