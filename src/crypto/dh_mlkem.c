@@ -119,10 +119,11 @@ static int noise_mlkem_set_keypair(NoiseDHState* st, const uint8_t* private_key,
 static int noise_mlkem_validate_public_key(const NoiseDHState* state,
 					   const uint8_t* public_key) {
     NoiseMlkemState* st = (NoiseMlkemState*)state;
-    return MLKEM_parse_public_key(st->public_key, public_key,
-				  st->parent.public_key_len)
-	       ? NOISE_ERROR_NONE
-	       : NOISE_ERROR_INVALID_STATE;
+    MLKEM_parse_public_key(st->public_key, public_key,
+			   st->parent.public_key_len);
+
+    /* Returns always ok because of public_key can be cipher text */
+    return NOISE_ERROR_NONE;
 }
 
 static int noise_mlkem_copy(NoiseDHState* st, const NoiseDHState* from,
