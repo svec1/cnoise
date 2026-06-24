@@ -59,8 +59,8 @@
  *
  * \param state Points to the variable where to store the pointer to
  * the new HashState object.
- * \param id The algorithm identifier; NOISE_HASH_BLAKE2s,
- * NOISE_HASH_SHA256, etc.
+ * \param id The algorithm identifier; NOISE_HASH_SHA256 
+ * NOISE_HASH_SHA3512, etc.
  *
  * \return NOISE_ERROR_NONE on success.
  * \return NOISE_ERROR_INVALID_PARAM if \a state is NULL.
@@ -102,7 +102,7 @@ int noise_hashstate_new_by_id(NoiseHashState **state, int id) {
  *
  * \param state Points to the variable where to store the pointer to
  * the new HashState object.
- * \param name The name of the cipher algorithm; e.g. "BLAKE2s", "SHA256", etc.
+ * \param name The name of the cipher algorithm; e.g. "SHA256", "SHA3512", etc.
  * This string must be NUL-terminated.
  *
  * \return NOISE_ERROR_NONE on success.

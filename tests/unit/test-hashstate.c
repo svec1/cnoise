@@ -52,7 +52,7 @@ static void check_hash(int id, size_t hash_len, size_t block_len, const char *na
     memset(temp, 0xAA, sizeof(temp));
     compare(noise_hashstate_hash_one(state, input, input_len, temp, hash_len),
             NOISE_ERROR_NONE);
-    verify(!memcmp(temp, output, hash_len));
+	verify(!memcmp(temp, output, hash_len));
 
     /* Check hashing the data split into two separate parts */
     for (index = 0; index < input_len; ++index) {
@@ -131,7 +131,16 @@ static void check_hash(int id, size_t hash_len, size_t block_len, const char *na
 /* Check against test vectors from the various specifications
    to validate that the algorithms work as low level primitives */
 static void hashstate_check_test_vectors(void) {
-    /* SHA2_256 */
+    /* RIPEMD160 */
+    check_hash(NOISE_HASH_RIPEMD160, 20, 64, "RIPEMD160", "",
+               "0x9c1185a5c5e9fc54612808977ee8f548b2258d31");
+    check_hash(NOISE_HASH_RIPEMD160, 20, 64, "RIPEMD160", "abc",
+               "0x8eb208f7e05d987a9b044a8e98c6b087f15a0bfc");
+    check_hash(NOISE_HASH_RIPEMD160, 20, 64, "RIPEMD160",
+               "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq",
+               "0x12a053384a9c0c88e405a06c27dcf49ada62eb2b");
+	
+	/* SHA2_256 */
     check_hash(NOISE_HASH_SHA256, 32, 64, "SHA256", "",
                "0xe3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
     check_hash(NOISE_HASH_SHA256, 32, 64, "SHA256", "abc",
