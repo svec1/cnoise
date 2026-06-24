@@ -60,6 +60,7 @@ static NoiseIdMapping const algorithm_names[] = {
     {NOISE_CIPHER_AESGCM, "AESGCM", 6},
 
     /* Hash algorithms */
+    {NOISE_HASH_RIPEMD160, "RIPEMD160", 9},
     {NOISE_HASH_SHA256, "SHA256", 6},
     {NOISE_HASH_SHA512, "SHA512", 6},
     {NOISE_HASH_SHA3256, "SHA3256", 7},

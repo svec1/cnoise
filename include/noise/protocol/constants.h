@@ -41,10 +41,11 @@ extern "C" {
 /* Hash algorithms */
 #define NOISE_HASH_NONE 0
 #define NOISE_HASH_CATEGORY NOISE_ID('H', 0)
-#define NOISE_HASH_SHA256 NOISE_ID('H', 1)
-#define NOISE_HASH_SHA512 NOISE_ID('H', 2)
-#define NOISE_HASH_SHA3256 NOISE_ID('H', 3)
-#define NOISE_HASH_SHA3512 NOISE_ID('H', 4)
+#define NOISE_HASH_RIPEMD160 NOISE_ID('H', 1)
+#define NOISE_HASH_SHA256 NOISE_ID('H', 2)
+#define NOISE_HASH_SHA512 NOISE_ID('H', 3)
+#define NOISE_HASH_SHA3256 NOISE_ID('H', 4)
+#define NOISE_HASH_SHA3512 NOISE_ID('H', 5)
 
 /* Diffie-Hellman algorithms */
 #define NOISE_DH_NONE 0

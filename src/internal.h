@@ -531,7 +531,7 @@ void noise_rand_bytes(void* bytes, size_t size);
 
 NoiseCipherState* noise_aead_cipher_new(uint16_t);
 
-NoiseHashState* noise_sha_new(uint16_t);
+NoiseHashState* noise_hash_new(uint16_t);
 
 NoiseDHState* noise_curve25519_new(void);
 NoiseDHState* noise_mlkem_new(uint16_t);
