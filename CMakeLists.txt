@@ -7,7 +7,7 @@ option(CNOISE_VECTOR_TESTS "Compile vector tests." OFF)
 set(NAME_PROJECT_CNOISE cnoise)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS YES)
-set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/portable;${CMAKE_MODULE_PATH}")
+set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH}")
 
 file(GLOB_RECURSE CRYPTO_SOURCE_FILES src/crypto/*.c)
 file(GLOB_RECURSE PROTOCOL_SOURCE_FILES src/protocol/*.c)
@@ -22,16 +22,6 @@ set(CNOISE_INCLUDE_DIR include/)
 
 project(${NAME_PROJECT_CNOISE} LANGUAGES C ASM)
 
-# Builds LibreSSL
-add_custom_target(
-    LibreSSL_lib
-    WORKING_DIRECTORY thirdparty/portable
-    COMMAND ./autogen
-    COMMAND ./configure
-    COMMAND make check
-    COMMAND make 
-    VERBATIM
-)
 find_package(LibreSSL REQUIRED)
 
 add_library(${NAME_PROJECT_CNOISE} STATIC ${CNOISE_SOURCE_FILES})
